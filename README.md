@@ -7,6 +7,6 @@ Usage
 -----
 
 ```
-docker run -it -p 0.0.0.0:1234:1234 gnames/text
+docker run -d -p 0.0.0.0:1234:1234 --name tf gnames/taxonfinder
 ```
 
