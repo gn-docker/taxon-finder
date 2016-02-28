@@ -30,13 +30,13 @@ print "Wordlists loaded.\n\n";
 
 $readable_handles = new IO::Select();
 $readable_handles->add($main_socket);
-while(1) 
+while(1)
 {
     #print "start\n";
     ($new_readable) = IO::Select->select($readable_handles, undef, undef, 0);
-    
+
     $clientNumber = 0;
-    
+
     foreach $thisclient (@$new_readable)
     {
         $clientNumber++;
@@ -56,7 +56,7 @@ while(1)
             if($inputString)
             {
                 $inputString = trim($inputString);
-                
+
                 if($inputString eq $reload_key." - reload dictionaries")
                 {
                     print "Reloading wordlists...\n";
@@ -65,7 +65,7 @@ while(1)
                     print $thisclient "Wordlists reloaded\n";
                     next;
                 }
-                
+
                 if($inputString eq $reload_key." - reload genera")
                 {
                     print "Reloading genera...\n";
@@ -74,7 +74,7 @@ while(1)
                     print $thisclient "Genera reloaded\n";
                     next;
                 }
-                
+
                 # parse string into parts
                 $inputString =~ s/\n/ /g;
                 $inputString =~ s/\r/ /g;
@@ -91,19 +91,19 @@ while(1)
                     print $thisclient "||0||-1||\n";
                     next;
                 }
-                
-                
+
+
                 # clear out spaces in input string
                 #$inputString =~ s/ //g;
-                
+
                 $candidateWord = trim($candidateWord);
                 $cleanCandidateWord = clean($candidateWord);
                 $lcCandidateWord = lc($cleanCandidateWord);
                 $currentString = trim($currentString);
                 $currentStringState = trim($currentStringState);
                 $wordListMatches = trim($wordListMatches);
-                
-                
+
+
                 # Has no letters, no need to search dictionaries
                 if (!$cleanCandidateWord)
                 {
@@ -114,9 +114,9 @@ while(1)
                     }
                     next;
                 }
-                
+
                 #### LOOK UP WORD IN WORDLISTS
-                
+
                 # current name string is genus
                 if ($currentStringState eq "genus")
                 {
@@ -132,7 +132,7 @@ while(1)
                             {
                                 #$currentString = "[".$lastGenus[$clientNumber]{$1}."]";
                                 $currentString = $1."[".substr($lastGenus[$clientNumber]{$1},length($1))."]";
-                                
+
                                 if($candidateWord =~ /[,;\.\)\]][^A-Za-z]*$/i)
                                 {
                                     $currentString = "$currentString $cleanCandidateWord";
@@ -144,7 +144,7 @@ while(1)
                                     print $thisclient "$currentString $cleanCandidateWord|species|$wordListMatches"."$score||-1||\n";
                                 }
                             }
-                            
+
                             #No match for initial, return blank string
                             else
                             {
@@ -166,8 +166,8 @@ while(1)
                         }
                         next;
                     }
-                    
-                    
+
+
                     # possible abbreviated genus
                     if ($candidateWord =~ /^[A-Z][a-z]?\.$/)
                     {
@@ -175,7 +175,7 @@ while(1)
                         print $thisclient "$cleanCandidateWord|genus|0|$currentString|$wordListMatches||\n";
                         next;
                     }
-                    
+
                     $scoreG = isGenus($lcCandidateWord, $cleanCandidateWord);
                     $scoreF = isFamily($lcCandidateWord, $cleanCandidateWord);
                     if ($scoreG eq "G" || $scoreG eq "g" || ($scoreG eq "4" && $scoreF ne "F" && $scoreF ne "f"))
@@ -193,7 +193,7 @@ while(1)
                                     $currentString = $1."[".substr($lastGenus[$clientNumber]{$1},length($1))."]";
                                     print $thisclient "$currentString ($cleanCandidateWord)|genus|$wordListMatches"."$scoreG||-1||\n";
                                 }
-                                
+
                                 #No match for initial, return this genus string
                                 else
                                 {
@@ -206,7 +206,7 @@ while(1)
                             }
                             next;
                         }
-                        
+
                         # Just another genus
                         else
                         {
@@ -219,7 +219,7 @@ while(1)
                             next;
                         }
                     }
-                    
+
                     if ($scoreF ne "-1")
                     {
                         if (length($currentString)<=2)
@@ -228,7 +228,7 @@ while(1)
                         }
                         scoreReturnString();
                         $toReturn = "||0|$currentString|$wordListMatches";
-                        
+
                         $currentString = ucfirst($lcCandidateWord);
                         $wordListMatches = $scoreF;
                         scoreReturnString();
@@ -236,7 +236,7 @@ while(1)
                         next;
                     }
                 }
-                
+
                 # current name string is supra
                 elsif ($currentStringState eq "species")
                 {
@@ -247,7 +247,7 @@ while(1)
                         print $thisclient "$currentString $cleanCandidateWord|species|$wordListMatches"."$score||-1||\n";
                         next;
                     }
-                    
+
                     # Infra-specific rank
                     $score = isRank($lcCandidateWord, $cleanCandidateWord);
                     if ($score ne '-1')
@@ -255,7 +255,7 @@ while(1)
                         print $thisclient "$currentString $candidateWord|rank|$wordListMatches"."$score||-1||\n";
                         next;
                     }
-                    
+
                     # possible abbreviated genus
                     if ($candidateWord =~ /^[A-Z][a-z]?\.$/)
                     {
@@ -263,7 +263,7 @@ while(1)
                         print $thisclient "$cleanCandidateWord|genus|0|$currentString|$wordListMatches||\n";
                         next;
                     }
-                    
+
                     $scoreG = isGenus($lcCandidateWord, $cleanCandidateWord);
                     $scoreF = isFamily($lcCandidateWord, $cleanCandidateWord);
                     if ($scoreG eq "G" || $scoreG eq "g" || ($scoreG eq "4" && $scoreF ne "F" && $scoreF ne "f"))
@@ -272,12 +272,12 @@ while(1)
                         print $thisclient "$cleanCandidateWord|genus|$scoreG|$currentString|$wordListMatches||\n";
                         next;
                     }
-                    
+
                     if ($scoreF ne "-1")
                     {
                         scoreReturnString();
                         $toReturn = "||0|$currentString|$wordListMatches";
-                        
+
                         $currentString = ucfirst($lcCandidateWord);
                         $wordListMatches = $scoreF;
                         scoreReturnString();
@@ -285,7 +285,7 @@ while(1)
                         next;
                     }
                 }
-                
+
                 # current name string is supra
                 elsif ($currentStringState eq "rank")
                 {
@@ -296,7 +296,7 @@ while(1)
                         print $thisclient "$currentString $cleanCandidateWord|species|$wordListMatches"."$score||-1||\n";
                         next;
                     }
-                    
+
                     # possible abbreviated genus
                     if ($candidateWord =~ /^[A-Z][a-z]?\.$/)
                     {
@@ -304,7 +304,7 @@ while(1)
                         print $thisclient "$cleanCandidateWord|genus|0|$currentString|$wordListMatches||\n";
                         next;
                     }
-                    
+
                     $scoreG = isGenus($lcCandidateWord, $cleanCandidateWord);
                     $scoreF = isFamily($lcCandidateWord, $cleanCandidateWord);
                     if ($scoreG eq "G" || $scoreG eq "g" || ($scoreG eq "4" && $scoreF ne "F" && $scoreF ne "f"))
@@ -313,12 +313,12 @@ while(1)
                         print $thisclient "$cleanCandidateWord|genus|$scoreG|$currentString|$wordListMatches||\n";
                         next;
                     }
-                    
+
                     if ($scoreF ne "-1")
                     {
                         scoreReturnString();
                         $toReturn = "||0|$currentString|$wordListMatches";
-                        
+
                         $currentString = ucfirst($lcCandidateWord);
                         $wordListMatches = $scoreF;
                         scoreReturnString();
@@ -326,7 +326,7 @@ while(1)
                         next;
                     }
                 }
-                
+
                 # current name string is not specified (new)
                 else
                 {
@@ -336,7 +336,7 @@ while(1)
                         print $thisclient "$cleanCandidateWord|genus|0||-1||\n";
                         next;
                     }
-                    
+
                     $scoreG = isGenus($lcCandidateWord, $cleanCandidateWord);
                     $scoreF = isFamily($lcCandidateWord, $cleanCandidateWord);
                     if ($scoreG eq "G" || $scoreG eq "g" || ($scoreG eq "4" && $scoreF ne "F" && $scoreF ne "f"))
@@ -358,7 +358,7 @@ while(1)
                         }
                         next;
                     }
-                    
+
                     if ($scoreF ne "-1")
                     {
                         $currentString = ucfirst($lcCandidateWord);
@@ -369,9 +369,9 @@ while(1)
                     }
                 }
             	#### END LOOKUP IN WORDLISTS
-            	
-            	
-            	
+
+
+
                 scoreReturnString();
             	print $thisclient "||0|$currentString|$wordListMatches||\n";
             }else
@@ -382,16 +382,16 @@ while(1)
             }
         }
     }
-    
+
     $numClients = $readable_handles->count();
     #print "Checking - $numClients\n";
     if($numClients==1)
     {
         print "Waiting for connection...\n";
         $new_sock = $main_socket->accept();
-        print "Reloading wordlists...\n";
-        reloadWordLists();
-        print "Wordlists reloaded\n";
+        # print "Reloading wordlists...\n";
+        # reloadWordLists();
+        # print "Wordlists reloaded\n";
         print "Connecting\n";
         $readable_handles->add($new_sock);
         undef($lastGenus[1]);
@@ -454,9 +454,9 @@ sub isSpecies
     {
         if($cleanCandidateWord =~ /[A-Z]/) { return -1; }
     }
-    
+
     if($speciesHash{$lcCandidateWord}) { return 'S'; }
-    
+
     if($checkNameModels)
     {
         if(score_word_species($lcCandidateWord)) { return '3'; }
@@ -524,7 +524,7 @@ sub isRank
 sub loadWordLists ()
 {
     $wordListDir = "wordLists";
-    
+
     $familyFileName  = "$wordListDir/family.txt";
     $familyNewFileName  = "$wordListDir/family_new.txt";
     $genusFileName   = "$wordListDir/genera.txt";
@@ -546,8 +546,8 @@ sub loadWordLists ()
     $family4 = "$wordListDir/stats_family_4.txt";
     $language3 = "$wordListDir/stats_language.txt";
     $language4 = "$wordListDir/stats_language_4.txt";
-    
-    
+
+
     #  1- family words
     open (FILE, $familyFileName);
     while (<FILE>)
@@ -570,7 +570,7 @@ sub loadWordLists ()
         if ($_) { $familyHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     #  2- genus words
     open (FILE, $genusFileName);
     while (<FILE>)
@@ -593,7 +593,7 @@ sub loadWordLists ()
         if ($_) { $genusHash{lc($_)}=0 };
     }
     close (FILE);
-    
+
     #  3- species words
     open (FILE, $speciesFileName);
     while (<FILE>)
@@ -609,7 +609,7 @@ sub loadWordLists ()
     	if ($_) { $speciesHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     #  4- rank words
     open (FILE, $rankFileName);
     while (<FILE>)
@@ -618,7 +618,7 @@ sub loadWordLists ()
         if ($_) { $rankHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     open (FILE, $overlapNewFileName);
     while (<FILE>)
     {
@@ -626,7 +626,7 @@ sub loadWordLists ()
         if ($_) { $overlapHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     #  6- bad species words
     open (FILE, $badSpeciesFileName);
     while (<FILE>)
@@ -635,7 +635,7 @@ sub loadWordLists ()
         if ($_) { $badSpeciesHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     open (FILE, $dictAmbig);
     while (<FILE>)
     {
@@ -643,7 +643,7 @@ sub loadWordLists ()
         if ($_) { $ambigHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     open (FILE, "$wordListDir/dict_bad.txt");
     while (<FILE>)
     {
@@ -651,8 +651,8 @@ sub loadWordLists ()
         if ($_) { $badHash{lc($_)}++ };
     }
     close (FILE);
-    
-    
+
+
     open(FILE, "$wordListDir/stats_species.txt");
     while(<FILE>)
     {
@@ -671,7 +671,7 @@ sub loadWordLists ()
         }
     }
     close(FILE);
-    
+
     open(FILE, "$wordListDir/stats_species_4.txt");
     while(<FILE>)
     {
@@ -690,7 +690,7 @@ sub loadWordLists ()
         }
     }
     close(FILE);
-    
+
     open(FILE, "$wordListDir/stats_genera.txt");
     while(<FILE>)
     {
@@ -709,7 +709,7 @@ sub loadWordLists ()
         }
     }
     close(FILE);
-    
+
     open(FILE, "$wordListDir/stats_genera_4.txt");
     while(<FILE>)
     {
@@ -728,7 +728,7 @@ sub loadWordLists ()
         }
     }
     close(FILE);
-    
+
     open(FILE, "$wordListDir/stats_family.txt");
     while(<FILE>)
     {
@@ -747,7 +747,7 @@ sub loadWordLists ()
         }
     }
     close(FILE);
-    
+
     open(FILE, "$wordListDir/stats_family_4.txt");
     while(<FILE>)
     {
@@ -783,7 +783,7 @@ sub reloadWordLists
         if ($_) { $familyHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     open (FILE, "$wordListDir/genera_family.txt");
     while (<FILE>)
     {
@@ -791,7 +791,7 @@ sub reloadWordLists
         if ($_) { $familyHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     open (FILE, "$wordListDir/genera_new.txt");
     while (<FILE>)
     {
@@ -799,7 +799,7 @@ sub reloadWordLists
         if ($_) { $genusHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     open (FILE, "$wordListDir/genera_family.txt");
     while (<FILE>)
     {
@@ -807,7 +807,7 @@ sub reloadWordLists
         if ($_) { $genusHash{lc($_)}=0 };
     }
     close (FILE);
-    
+
     open (FILE, "$wordListDir/species_new.txt");
     while (<FILE>)
     {
@@ -815,7 +815,7 @@ sub reloadWordLists
         if ($_) { $speciesHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     open (FILE, "$wordListDir/overlap_new.txt");
     while (<FILE>)
     {
@@ -823,7 +823,7 @@ sub reloadWordLists
         if ($_) { $overlapHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     open (FILE, "$wordListDir/species_bad.txt");
     while (<FILE>)
     {
@@ -831,7 +831,7 @@ sub reloadWordLists
         if ($_) { $badSpeciesHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     open (FILE, "$wordListDir/dict_ambig.txt");
     while (<FILE>)
     {
@@ -839,7 +839,7 @@ sub reloadWordLists
         if ($_) { $ambigHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     open (FILE, "$wordListDir/dict_bad.txt");
     while (<FILE>)
     {
@@ -847,7 +847,7 @@ sub reloadWordLists
         if ($_) { $badHash{lc($_)}++ };
     }
     close (FILE);
-    
+
     open (FILE, "$wordListDir/ranks.txt");
     while (<FILE>)
     {
@@ -861,7 +861,7 @@ sub reloadWordLists
 
 
 
-sub trim 
+sub trim
 {
     local $_ = shift;
     s/^[\s\n\r]*//;
@@ -870,7 +870,7 @@ sub trim
 }
 
 
-sub clean 
+sub clean
 {
     local $_ = shift;
     s/^[^0-9A-Za-z]+//;
@@ -948,13 +948,13 @@ sub score_word_species_3
     while($name =~ /^(.)(.)(.)(.*)/)
     {
         $part = $1.$2.$3;
-        
+
         if($prev)
         {
             $sumSci += $after{'species3'}{$prev}{$part};
             $numSeq++;
         }
-        
+
         $name = $2.$3.$4;
         $prev = $part;
     }
@@ -973,13 +973,13 @@ sub score_word_species_4
     while($name =~ /^(.)(.)(.)(.)(.*)/)
     {
         $part = $1.$2.$3.$4;
-        
+
         if($prev)
         {
             $sumSci += $after{'species4'}{$prev}{$part};
             $numSeq++;
         }
-        
+
         $name = $2.$3.$4.$5;
         $prev = $part;
     }
@@ -1023,13 +1023,13 @@ sub score_word_genera_3
     while($name =~ /^(.)(.)(.)(.*)/)
     {
         $part = $1.$2.$3;
-        
+
         if($prev)
         {
             $sumSci += $after{'genera3'}{$prev}{$part};
             $numSeq++;
         }
-        
+
         $name = $2.$3.$4;
         $prev = $part;
     }
@@ -1048,13 +1048,13 @@ sub score_word_genera_4
     while($name =~ /^(.)(.)(.)(.)(.*)/)
     {
         $part = $1.$2.$3.$4;
-        
+
         if($prev)
         {
             $sumSci += $after{'genera4'}{$prev}{$part};
             $numSeq++;
         }
-        
+
         $name = $2.$3.$4.$5;
         $prev = $part;
     }
@@ -1097,13 +1097,13 @@ sub score_word_family_3
     while($name =~ /^(.)(.)(.)(.*)/)
     {
         $part = $1.$2.$3;
-        
+
         if($prev)
         {
             $sumSci += $after{'family3'}{$prev}{$part};
             $numSeq++;
         }
-        
+
         $name = $2.$3.$4;
         $prev = $part;
     }
@@ -1122,13 +1122,13 @@ sub score_word_family_4
     while($name =~ /^(.)(.)(.)(.)(.*)/)
     {
         $part = $1.$2.$3.$4;
-        
+
         if($prev)
         {
             $sumSci += $after{'family4'}{$prev}{$part};
             $numSeq++;
         }
-        
+
         $name = $2.$3.$4.$5;
         $prev = $part;
     }
